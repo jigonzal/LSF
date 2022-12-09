@@ -28,10 +28,16 @@ def GetCorrelation(spectrum):
 			correlation.append(np.corrcoef(spectrum[:-1*i], spectrum[i:])[0][1])
 	return correlation
 
+
+#changelog
+
+#v0.2:
+# added the option to use the cleaning mask to filter real emission. 
 #v0.1
 
 parser = argparse.ArgumentParser(description="Python script that estimates the correlation of channels (i.e. LSF) in ALMA data cubes")
 parser.add_argument('-Cube', type=str, required=True,help = 'Path to the Cube fits file to analyse')
+parser.add_argument('-Mask', type=str,default = 'placeholder.fits', required=False,help = 'Path to the Mask Cube fits file to use')
 parser.add_argument('-ChannelWidth', type=float, default = 0.0, required=False,help = 'Width of channels in km/s for display purposes [Default:0.0]')
 args = parser.parse_args()
 
@@ -43,11 +49,27 @@ else:
     print('*** Cube',args.Cube,'not found ***\naborting..')
     exit()
 
+print(20*'#','Checking inputs....',20*'#')
+
+if args.Mask!='placeholder.fits':
+	if os.path.exists(args.Mask):
+	    print('*** Cube',args.Mask,'found ***')
+	else:
+	    print('*** Cube',args.Mask,'not found ***\naborting..')
+	    exit()
+
+
+
 
 CubePath = args.Cube
 ChannelWidth = args.ChannelWidth
 Cube = fits.open(CubePath)[0].data[0]
-Mask = np.zeros_like(Cube)
+
+if args.Mask=='placeholder.fits':
+	Mask = np.zeros_like(fits.open(args.Mask)[0].data[0])
+else:
+	Mask = np.zeros_like(Cube)
+
 FinalMask = np.mean(Mask,axis=0) 
 FinalCube = np.mean(Cube,axis=0)
 FinalMask[np.isnan(FinalCube)]=1
